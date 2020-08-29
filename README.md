@@ -19,7 +19,7 @@ Better capture performance with
     $ python3 -m pip install --upgrade libpcap
 
 How to run.
-./python3 <script name> <local network interface name> <ip address of device running EK>
+./python3 ekgui.py <local network interface name> <ip address of device running EK>
 
 Known bugs:
 Sometimes the terminal rceives what appear to be control characters.
