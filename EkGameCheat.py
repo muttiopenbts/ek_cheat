@@ -26,7 +26,6 @@ import inspect
 import platform
 import os
 import sys
-import copy
 
 
 # 36 chrs
@@ -34,7 +33,8 @@ GUID = '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA
 
 conf.use_pcap = True
 regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds.*?(S.*?)[\x01-\xff]{{3}}\x00'.encode()
-# player_id, username, did, avatarIds
+regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds\x00(.*)'.encode()
+# player_id, username, did, len_and_avatarIds
 REGEX_PLAYERS = re.compile(regex_bstring, re.DOTALL)
 
 regex_bstring = rb'AddPlayerToQueuey.*?\$.*?\x00.*?(LoadGameScene)'
@@ -192,7 +192,8 @@ class EkGameCheat:
                 # Collect player details
                 found_players = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYERS)
                 if len(found_players) > 0:
-                    for player_id, username, did, avatarIds in found_players:
+                    for player_id, username, did, len_and_avatarIds in found_players:
+                        avatarIds = self.getNextMessage(len_and_avatarIds)
                         new_player = Player(
                                 player_id = player_id,
                                 names = [username],
@@ -210,7 +211,7 @@ class EkGameCheat:
                 played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYCARD)
                 if len(played_card) > 0:
                     for action, player_id, length_n_card in played_card:
-                        card = self.getNextMessage(length_n_card) # TODO: Bad values in result.
+                        card = self.getNextMessage(length_n_card)
                         self.game_actions.append([action,player_id,card])
                         logging.debug(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
                         self.updateConsole(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')

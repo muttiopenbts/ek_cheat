@@ -27,7 +27,6 @@ TODO: Investigate if better sanitization of bytes from the wire is needed.
 import npyscreen
 from datetime import datetime
 from Player import Player, Players
-import copy
 import logging
 logging.basicConfig(level=logging.ERROR)
 
@@ -167,6 +166,7 @@ class MyApp(npyscreen.NPSAppManaged):
 
 
     def stop(self):
+        os.system('clear;stty sane')
         print("\nInterrupted. Restoring to normal state..")
         ip_forwarding(False)
         self.game_cheat.restore(VICTIM_IP,self.gateway_ip)
@@ -175,7 +175,6 @@ class MyApp(npyscreen.NPSAppManaged):
         print('Closing down gracefully can take a while if there are many packets captured.')
        
         # Try to restore terminal to working order.
-        os.system('clear;stty sane')
         os._exit(os.EX_OK)
 
     def onStart(self):
