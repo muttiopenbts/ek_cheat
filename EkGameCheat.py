@@ -32,75 +32,66 @@ import sys
 GUID = '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'
 
 conf.use_pcap = True
-regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds.*?(S.*?)[\x01-\xff]{{3}}\x00'.encode()
-regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds\x00(.*)'.encode()
+
+regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds\x00(.*?)\xff'.encode()
 # player_id, username, did, len_and_avatarIds
 REGEX_PLAYERS = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = rb'AddPlayerToQueuey.*?\$.*?\x00.*?(LoadGameScene)'
-# This looks like message that confirms final list of players
-# message
-REGEX_GAME_STARTED = re.compile(regex_bstring, re.DOTALL)
-
-regex_bstring = b'(AddPlayerToQueue)y.*?\$(.*?)\x00'
 regex_bstring = rf'(AddPlayerToQueue)y.*?({GUID})\x00'.encode()
 # This looks like message that confirms final list of players
 # message, player_id
 REGEX_PLAYERS_QUEUED = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'OpponentChosen.*?\$(.*?)\x00\$(.*?)\x00([\x01-\xff].*?)[\x00-\xff]\x00.*?WriteActivityMessagey'
-# player_id, player_id2, length_and_card
-# TODO: fix opponent, card, action, player_id
+regex_bstring = rf'(OpponentChosen).*?({GUID}).*?({GUID})\x00(.*?)WriteActivityMessagey'.encode()
+# Steals
+# action, player_id, player_id2, length_and_card
 # {card}-{action} by {get_player_name(saved_players, player_id)} to {get_player_name(saved_players, opponent)}
 REGEX_OPPONENTCHOSEN = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = rf'(PlayCard?)y\x00.*?({GUID})\x00([\x01-\xff].*?)WriteActivityMessagey'.encode()
+regex_bstring = rf'(PlayCard).*?({GUID})\x00(.*?)WriteActivityMessagey'.encode()
 # action, player_id, length_and_card.
 # Catches a players played card.
 # Target hasn't been selected yet. TODO: Getting bad bytes in card field
 REGEX_PLAYCARD_0 = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(?!.*WriteActivity)(PlayCard?)y\x00.*\$(.*?)\x00([\x01-\xff].*)'
 regex_bstring = rf'(?!.*WriteActivity)(PlayCard?)y\x00.*?({GUID})\x00([\x01-\xff].*)'.encode()
 # action, player_id, length_and_card. Looking for DrawFromBottom TODO: Card field not 100% working
 # Player action is still to playcard except some played cards have extra animation.
 REGEX_PLAYCARD = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(DrawCard?)y\x00.*?\$(.*?)\x00([\x01-\xff].*)'
-regex_bstring = rf'(DrawCard?)y\x00.*?({GUID})\x00([\x01-\xff].*)'.encode()
+regex_bstring = rf'(DrawCard).*?({GUID})\x00([\x01-\xff].*)'.encode()
 # action, player_id, len_and_card
 REGEX_DRAWCARD = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(OpponentChosen|InsertCardInDeck?)y\x00.*?\$(.*?)\x00[\x01-\xff](.*?)\x00'
-regex_bstring = rf'(OpponentChosen|InsertCardInDeck?)y\x00.*?({GUID})\x00[\x01-\xff](.*?)\x00'.encode()
-# action, player_id, id
-REGEX_ACTION6 = re.compile(regex_bstring, re.DOTALL)
+regex_bstring = rf'(InsertCardInDeck).*?({GUID})\x00(.*?)\x00(.*)'.encode()
+# action, player_id, length_n_card, length_n_ek_position
+# Need to account of bytes representing ek placement position
+REGEX_INSERTCARD = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(GiveSteal?)y.*?\$(.*?)\x00\$(.*?)\x00([\x01-\xff].*)'
-regex_bstring = rf'(GiveSteal?)y.*?({GUID}).*?({GUID})\x00([\x01-\xff].*)'.encode()
+regex_bstring = rf'(?!.*WriteActivity)(OpponentChosen).*?({GUID}).*?({GUID})\x00(.*)'.encode()
+# Slaps
+# action, player_id, player_id2, length_n_card
+REGEX_OPPONENTCHOSEN2 = re.compile(regex_bstring, re.DOTALL)
+
+regex_bstring = rf'(GiveSteal).*?({GUID}).*?({GUID})\x00([\x01-\xff].*)'.encode()
 # action, player_id, plaer_id2, length_and_card
 REGEX_XCHG = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(Emote?)y.*?\$(.*?)\x00([\x01-\xff].*)'
+regex_bstring = rf'(Emote).*?({GUID})\x00([\x01-\xff].*)'
 # action, player_id, emote_len_and_emote
 REGEX_EMOTE = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(GameStarted?)y\x00'
+regex_bstring = rf'(GameStarted)y\x00'.encode()
 # action
 REGEX_STARTED = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(PlayerDied?)y\x00.*?\$([\x01-\xff]{36})'
-regex_bstring = rf'(PlayerDied?)y\x00.*?({GUID})'.encode()
+regex_bstring = rf'(PlayerDied).*?({GUID})'.encode()
 # action, player_id
 REGEX_DIED = re.compile(regex_bstring, re.DOTALL)
 
-regex_bstring = b'(ReceivedNagPlayer?)y\x00()()'
+regex_bstring = rf'(ReceivedNagPlayer)y\x00()()'
 # TODO: action, player_id, player_id2
 REGEX_NAG = re.compile(regex_bstring, re.DOTALL)
-
-regex_bstring = b'(?:InsertCardInDeck).*?Bomb[\x00-\xff]{3}([\x01-\xff]*)'
-# length_and_bomb_position. First byte is length in hex for preceeding bytes representing bomb position in ascii.
-REGEX_BOMB_POS = re.compile(regex_bstring, re.DOTALL)
 
 GAME_STATES = {
         'INIT': 1,
@@ -158,169 +149,213 @@ class EkGameCheat:
     def sendCb(self, **kwargs):
 
         def _sendCb(pkt):
+            max_packet_size = 70 # bytes
+
             if not pkt.haslayer(IP):
-                # mac address get auto corrected.
-                #sendp(pkt, verbose=False)
                 return
 
             src_ip = pkt[IP].src
             dst_ip = pkt[IP].dst
 
             if dst_ip == self.MY_IP:
-                #sendp(pkt, verbose=False)
                 return
                 
-            if pkt.haslayer(UDP) and pkt.haslayer(Raw) and len(pkt[IP][UDP][Raw].load) > 100:
-                # Increment packet count and show on spinner
+            if pkt.haslayer(UDP) and pkt.haslayer(Raw) and len(pkt[IP][UDP][Raw].load) > max_packet_size:
+                # Increment packet count
                 self.pkt_count += 1
-                self.updateStatus(f'Packet count {self.pkt_count}')
+                # self.updateStatus(f'Packet count {self.pkt_count}')
 
-                # This message indicates that the game and final list of players have started
-                final_players_found = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYERS_QUEUED)
-
-                if final_players_found and len(final_players_found) > 0:
-                    with self.lock:
-                        self.finalizePlayers(self.potential_players, final_players_found)
-                        
-                        # Erase potential_players
-                        self.potential_players = Players()
-
-                        #message = pprint.pformat(inspect.getmembers(saved_players.players), indent=2)
-                        #save_to_file(f'\n{len(saved_players.players)}\n{final_players_found}\n{message}', 'dump.txt')
-                    return
-
-                # Collect player details
-                found_players = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYERS)
-                if len(found_players) > 0:
-                    for player_id, username, did, len_and_avatarIds in found_players:
-                        avatarIds = self.getNextMessage(len_and_avatarIds)
-                        new_player = Player(
-                                player_id = player_id,
-                                names = [username],
-                                device_id = did,
-                                avatar_id = avatarIds,
-                                hand = [],
-                                display_cb = self.player_cb,
-                        )
-                        self.potential_players.save_player(new_player)
-                        logging.debug(f'Username: {username}, {player_id}, {avatarIds}, {did}')
-                        self.updateConsole(f'Username: {username}, {player_id}, {avatarIds}, {did}')
-                    return
-            
-                # action, player_id, length, card. Looking for DrawFromBottom
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYCARD)
-                if len(played_card) > 0:
-                    for action, player_id, length_n_card in played_card:
-                        card = self.getNextMessage(length_n_card)
-                        self.game_actions.append([action,player_id,card])
-                        logging.debug(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
-                        self.updateConsole(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
-                        # Remove card from player hand
-                        self.saved_players.remove_card(player_id, card)
-                    return
-
-                # Played card
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYCARD_0)
-                if len(played_card) > 0:
-                    for action, player_id, length_n_card in played_card:
-                        card = self.getNextMessage(length_n_card)
-                        self.game_actions.append([action,player_id])
-                        # Remove card from player hand
-                        self.saved_players.remove_card(player_id, card)
-                        logging.debug(f'REGEX_PLAYCARD_0: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
-                        self.updateConsole(f'REGEX_PLAYCARD_0: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
-                    return
-
-                # action, player_id, len_and_card
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_DRAWCARD)
-                if len(played_card) > 0:
-                    for action, player_id, length_n_card in played_card:
-                        if 'DrawCard' in action.decode('utf-8'):
-                            card = self.getNextMessage(length_n_card)
-                            logging.debug([action,player_id, card])
-                            self.game_actions.append([action, player_id, card])
-                            self.saved_players.save_card(player_id, card)
-                            self.updateConsole(f'{action} {self.saved_players.get_player_name(player_id)} {card}')
-                    return
-
-                # action, player_id, id, ek_pos.
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_ACTION6)
-                if len(played_card) > 0:
-                    for action, player_id, gen_id in played_card:
-                        if 'Opponent' in action.decode('utf-8'):
-                            logging.debug(f'Game action6.2: {action} by {self.saved_players.get_player_name(player_id)} {self.saved_players.get_player_name(gen_id)}')
-                            self.game_actions.append([action,player_id,gen_id])
-
-                        elif 'InsertCardInDeck' in action.decode('utf-8'):
-                            # Get bomb placement position
-                            for length_n_ek_pos in self.containsAll(pkt[IP][UDP][Raw].load, REGEX_BOMB_POS):
-                                ek_pos = self.getNextMessage(length_n_ek_pos)
-                                ek_pos = int(ek_pos) + 1 # More accurate
-                                logging.debug(f'{action} by {self.saved_players.get_player_name(player_id)} {gen_id} ek placed {ek_pos}')
-                                self.game_actions.append([action,player_id,gen_id, ek_pos])
-                                self.updateConsole(f'{action} by {self.saved_players.get_player_name(player_id)} {gen_id} ek placed {ek_pos}')
-                    return
-
-                # Collect player emotes
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_EMOTE)
-                if len(played_card) > 0:
-                    for action, player_id, emote_len_and_emote in played_card:
-                        emote = self.getNextMessage(emote_len_and_emote)
-                        #print(f'{action}: {get_player_name(saved_players, player_id)} sends {emote}')
-
-                        # Attempt to send fake emotes TODO: wip          
-                        if (self.saved_players.get_player_name(player_id) and
-                                self.saved_players.get_player_name(player_id)[0].decode() in 'capn'):
-                            #pkt.show()
-                            del pkt[IP].chksum
-                            del pkt[UDP].chksum
-                            del pkt[IP].len
-                            del pkt[UDP].len
-                            del pkt[Ether].dst
-                            del pkt[Ether].src
-#                            pkt[UDP].load = EMOTE_DRUNK
-                            #sendp(pkt)
-                            #pkt.show2() # New checksum
-                    return
-                    
-                # Game activity 2, usually 2 player ids
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_OPPONENTCHOSEN)
-                if len(played_card) > 0:
-                    for player_id, opponent, length_and_card in played_card:
-                        card = self.getNextMessage(length_and_card)
-                        self.game_actions.append([player_id,card,opponent])
-                        self.saved_players.remove_card(opponent, card)
-                        logging.debug(f'REGEX_OPPONENTCHOSEN: card {card} \
-                                by {self.saved_players.get_player_name(player_id)} \
-                                to {self.saved_players.get_player_name(opponent)}')            
-                        self.updateConsole(f'REGEX_OPPONENTCHOSEN: card {card} \
-                                by {self.saved_players.get_player_name(player_id)} \
-                                to {self.saved_players.get_player_name(opponent)}')
-                    return
-
-                # action, player_id, card
-                played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_XCHG)
-                if len(played_card) > 0:
-                    for action, player_id, player_id2, length_n_card in played_card:
-                        card = self.getNextMessage(length_n_card)
-                        self.game_actions.append([action,player_id,card])
-                        self.saved_players.remove_card(player_id2, card)
-                        self.saved_players.save_card(player_id, card)
-                        logging.debug(f'REGEX_XCHG: {action} from {self.saved_players.get_player_name(player_id2)} to {self.saved_players.get_player_name(player_id)}  card {card}')
-                        self.updateConsole(f'REGEX_XCHG: {action} from {self.saved_players.get_player_name(player_id2)} to {self.saved_players.get_player_name(player_id)}  card {card}')
-                    return
-
-                # action, player_id
-                for action in self.containsAll(pkt[IP][UDP][Raw].load, REGEX_STARTED):
-                    self.game_actions.append([action])
-                    self.updateConsole(f'REGEX_STARTED: {action}')
-
-                # action, player_id
-                for action, player_id in self.containsAll(pkt[IP][UDP][Raw].load, REGEX_DIED):
-                    self.game_actions.append([action,player_id])
-                    self.updateConsole(f'REGEX_DIED: {action} {self.saved_players.get_player_name(player_id)}')
+                # TODO: Messages should be parsed in resepct to game state.
+                self.playOpponentChosen2(pkt)
+                self.playRegisterPlayers(pkt)
+                self.playAddPlayersToGame(pkt)
+                self.playCard(pkt)
+                self.playDrawCard(pkt)
+                self.playInsertCard(pkt)
+                self.playPlayCard(pkt)
+                self.playOpponentChosen(pkt)
+                self.playXchange(pkt)
+                #self.playEmote()
+                self.playStarted(pkt)
+                self.playDied(pkt)
 
         return _sendCb
+
+
+    def playAddPlayersToGame(self, pkt):
+        # This message indicates that the game and final list of players have started
+        final_players_found = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYERS_QUEUED)
+
+        if final_players_found and len(final_players_found) > 0:
+            self.finalizePlayers(self.potential_players, final_players_found)
+            
+            # Erase potential_players
+            self.potential_players = Players()
+
+            #message = pprint.pformat(inspect.getmembers(saved_players.players), indent=2)
+            #save_to_file(f'\n{len(saved_players.players)}\n{final_players_found}\n{message}', 'dump.txt')
+
+
+    def playCard(self, pkt):
+        # action, player_id, length, card. Looking for DrawFromBottom
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYCARD)
+        if len(played_card) > 0:
+            for action, player_id, length_n_card in played_card:
+                card = self.getNextMessage(length_n_card)
+
+                self.game_actions.append([action,player_id,card])
+                logging.debug(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
+                self.updateConsole(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
+                # Remove card from player hand
+                self.saved_players.remove_card(player_id, card)
+
+
+    def playDrawCard(self, pkt):
+        # action, player_id, len_and_card
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_DRAWCARD)
+        if len(played_card) > 0:
+            for action, player_id, length_n_card in played_card:
+                card = self.getNextMessage(length_n_card)
+
+                logging.debug([action,player_id, card])
+                self.game_actions.append([action, player_id, card])
+                self.saved_players.save_card(player_id, card)
+                self.updateConsole(f'{action} {self.saved_players.get_player_name(player_id)} {card}')
+
+
+    def playInsertCard(self, pkt):
+        # action, player_id, id, ek_pos.
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_INSERTCARD)
+
+        if len(played_card) > 0:
+            for action, player_id, len_n_card, ek_pos in played_card:
+                # Get bomb placement position
+                ek_pos = self.getNextMessage(ek_pos)
+                ek_pos = int(ek_pos) + 1 # More accurate
+
+                card = self.getNextMessage(len_n_card)
+
+                logging.debug(f'{action} by {self.saved_players.get_player_name(player_id)} {card} ek placed {ek_pos}')
+                self.game_actions.append([action,player_id,card, ek_pos])
+                self.updateConsole(f'{action} by {self.saved_players.get_player_name(player_id)} {card} ek placed {ek_pos}')
+
+
+    def playOpponentChosen2(self, pkt):
+        # action, player_id, id, ek_pos.
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_OPPONENTCHOSEN2)
+
+        if len(played_card) > 0:
+            for action, player_id, gen_id, len_n_card in played_card:
+                card = self.getNextMessage(len_n_card)
+                logging.debug(f'{action} by {self.saved_players.get_player_name(player_id)} {self.saved_players.get_player_name(gen_id)}')
+                self.game_actions.append([action,player_id,gen_id])
+                self.updateConsole(f'playOpponentChosen2: {action} by {self.saved_players.get_player_name(player_id)} {self.saved_players.get_player_name(gen_id)}, {card}')
+
+
+    def playPlayCard(self, pkt):
+        # Played card
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYCARD_0)
+
+        if len(played_card) > 0:
+            for action, player_id, length_n_card in played_card:
+                card = self.getNextMessage(length_n_card)
+
+                self.game_actions.append([action,player_id])
+                # Remove card from player hand
+                self.saved_players.remove_card(player_id, card)
+                logging.debug(f'REGEX_PLAYCARD_0: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
+                self.updateConsole(f'REGEX_PLAYCARD_0: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
+
+
+    def playOpponentChosen(self, pkt):
+        # Game activity 2, usually 2 player ids
+        # This could be something like a slap.
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_OPPONENTCHOSEN)
+
+        if len(played_card) > 0:
+            for action, player_id, opponent, length_and_card in played_card:
+                card = self.getNextMessage(length_and_card)
+
+                self.game_actions.append([player_id,card,opponent])
+                self.saved_players.remove_card(opponent, card)
+                logging.debug(f'REGEX_OPPONENTCHOSEN1: card {card} \
+                        by {self.saved_players.get_player_name(player_id)} \
+                        to {self.saved_players.get_player_name(opponent)}')            
+                self.updateConsole(f'playOpponentChosen: {action} card {card} \
+                        by {self.saved_players.get_player_name(player_id)} \
+                        to {self.saved_players.get_player_name(opponent)}')
+
+
+    def playRegisterPlayers(self, pkt):
+        # Collect player details
+        found_players = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_PLAYERS)
+        if len(found_players) > 0:
+            for player_id, username, did, len_and_avatarIds in found_players:
+                avatarIds = self.getNextMessage(len_and_avatarIds)
+                new_player = Player(
+                        player_id = player_id,
+                        names = [username],
+                        device_id = did,
+                        avatar_id = avatarIds,
+                        hand = [],
+                        display_cb = self.player_cb,
+                )
+
+                self.potential_players.save_player(new_player)
+                logging.debug(f'Username: {username}, {player_id}, {avatarIds}, {did}')
+                self.updateConsole(f'Username: {username}, {player_id}, {avatarIds}, {did}')
+            
+
+    def playXchange(self, pkt):
+        # action, player_id, card
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_XCHG)
+        if len(played_card) > 0:
+            for action, player_id, player_id2, length_n_card in played_card:
+                card = self.getNextMessage(length_n_card)
+
+                self.game_actions.append([action,player_id,card])
+                self.saved_players.remove_card(player_id2, card)
+                self.saved_players.save_card(player_id, card)
+                logging.debug(f'REGEX_XCHG: {action} from {self.saved_players.get_player_name(player_id2)} to {self.saved_players.get_player_name(player_id)}  card {card}')
+                self.updateConsole(f'REGEX_XCHG: {action} from {self.saved_players.get_player_name(player_id2)} to {self.saved_players.get_player_name(player_id)}  card {card}')
+
+
+    def playDied(self, pkt):
+        # action, player_id
+        for action, player_id in self.containsAll(pkt[IP][UDP][Raw].load, REGEX_DIED):
+            self.game_actions.append([action,player_id])
+            self.updateConsole(f'REGEX_DIED: {action} {self.saved_players.get_player_name(player_id)}')
+
+
+    def playStarted(self, pkt):
+        # action, player_id
+        for action in self.containsAll(pkt[IP][UDP][Raw].load, REGEX_STARTED):
+            self.game_actions.append([action])
+            self.updateConsole(f'REGEX_STARTED: {action}')
+            self.game_state = GAME_STATES['STARTED']
+
+    
+    def playEmote(self, pkt):
+        # Collect player emotes
+        played_card = self.containsAll(pkt[IP][UDP][Raw].load, REGEX_EMOTE)
+        if len(played_card) > 0:
+            for action, player_id, emote_len_and_emote in played_card:
+                emote = self.getNextMessage(emote_len_and_emote)
+                #print(f'{action}: {get_player_name(saved_players, player_id)} sends {emote}')
+
+                # Attempt to send fake emotes TODO: wip          
+                if (self.saved_players.get_player_name(player_id) and
+                        self.saved_players.get_player_name(player_id)[0].decode() in 'capn'):
+                    #pkt.show()
+                    del pkt[IP].chksum
+                    del pkt[UDP].chksum
+                    del pkt[IP].len
+                    del pkt[UDP].len
+                    del pkt[Ether].dst
+                    del pkt[Ether].src
+#                            pkt[UDP].load = EMOTE_DRUNK
+                    #sendp(pkt)
+                    #pkt.show2() # New checksum
 
 
     def finalizePlayers(self, potential_players:Players, player_ids:[] = []):
@@ -367,6 +402,7 @@ class EkGameCheat:
 
     def doSniff(self):
         BPF_EK_FILTER_EK = f'(udp port 5056)'
+        # BPF_EK_FILTER_EK = f'(udp port 5056 or udp port 5055)'
         BPF_EK_FILTER_MAC = f'(ether dst {self.SNIFF_INF_MAC})'
         BPF_FILTER = f'{BPF_EK_FILTER_EK} and {BPF_EK_FILTER_MAC}'
 

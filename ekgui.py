@@ -166,7 +166,7 @@ class MyApp(npyscreen.NPSAppManaged):
 
 
     def stop(self):
-        os.system('clear;stty sane')
+        os.system('reset;clear;stty sane')
         print("\nInterrupted. Restoring to normal state..")
         ip_forwarding(False)
         self.game_cheat.restore(VICTIM_IP,self.gateway_ip)
