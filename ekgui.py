@@ -17,7 +17,7 @@ Better capture performance with
     $ python3 -m pip install --upgrade libpcap
 
 How to run.
-./python3 <script name> <local network interface name> <ip address of device running EK>
+python3 ./<script name> <local network interface name> <ip address of device running EK>
 
 Known bugs:
 Sometimes the terminal rceives what appear to be control characters.
@@ -256,7 +256,7 @@ def display_console(**kwargs):
         app.main_form.console.buffer([repr(f'{data}')], True, True)
     
     # Display is auto invoked, but race condition means we might miss some messages.
-    app.main_form.console.display()
+    app.main_form.console.update()
 
 
 def display_status(**kwargs):
@@ -268,7 +268,7 @@ def display_status(**kwargs):
         app.main_form.status.buffer([repr(f'{data}')], True, True)
     
     # Display is auto invoked, but race condition means we might miss some messages.
-    app.main_form.status.display()
+    app.main_form.status.update()
 
 
 def update_console(message, call_back=display_console):
@@ -327,7 +327,7 @@ def display_player_cb(**kwargs):
                 pass
 
         # Display is auto invoked, but race condition means we might miss some messages.
-        form.display()
+        form.update()
     else:
         update_console(f'ERROR: display_player failed. Missing player param', display_console)      
 

@@ -106,7 +106,8 @@ pp = pprint.PrettyPrinter(indent=4)
 class EkGameCheat:
     def __init__(self, **kwargs):
         # List of final players who will play.
-        self.saved_players = Players() # [{'player_id':'$840eb76e-aa1b-4345-978c-21919d189001s','player_names':['bob','carl'], 'cards':[]]
+        self.saved_players = Players() 
+        # [{'player_id':'$840eb76e-aa1b-4345-978c-21919d189001s','player_names':['bob','carl'], 'cards':[]]
         # Collect data of potential players
         self.potential_players = Players()
         self.lock = Lock()
@@ -205,7 +206,8 @@ class EkGameCheat:
 
                 self.game_actions.append([action,player_id,card])
                 logging.debug(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
-                self.updateConsole(f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
+                self.updateConsole((
+                        f'PLAYCARD: {action} by {self.saved_players.get_player_name(player_id)} card {card}'))
                 # Remove card from player hand
                 self.saved_players.remove_card(player_id, card)
 
@@ -237,7 +239,9 @@ class EkGameCheat:
 
                 logging.debug(f'{action} by {self.saved_players.get_player_name(player_id)} {card} ek placed {ek_pos}')
                 self.game_actions.append([action,player_id,card, ek_pos])
-                self.updateConsole(f'{action} by {self.saved_players.get_player_name(player_id)} {card} ek placed {ek_pos}')
+                self.updateConsole((
+                        f'{action} by {self.saved_players.get_player_name(player_id)}'
+                        f' {card} ek placed {ek_pos}'))
 
 
     def playOpponentChosen2(self, pkt):
@@ -249,7 +253,10 @@ class EkGameCheat:
                 card = self.getNextMessage(len_n_card)
                 logging.debug(f'{action} by {self.saved_players.get_player_name(player_id)} {self.saved_players.get_player_name(gen_id)}')
                 self.game_actions.append([action,player_id,gen_id])
-                self.updateConsole(f'playOpponentChosen2: {action} by {self.saved_players.get_player_name(player_id)} {self.saved_players.get_player_name(gen_id)}, {card}')
+                self.updateConsole((
+                        f'playOpponentChosen2: {action} by '
+                        f'{self.saved_players.get_player_name(player_id)} '
+                        f'{self.saved_players.get_player_name(gen_id)}, {card}'))
 
 
     def playPlayCard(self, pkt):
@@ -264,7 +271,9 @@ class EkGameCheat:
                 # Remove card from player hand
                 self.saved_players.remove_card(player_id, card)
                 logging.debug(f'REGEX_PLAYCARD_0: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
-                self.updateConsole(f'REGEX_PLAYCARD_0: {action} by {self.saved_players.get_player_name(player_id)} card {card}')
+                self.updateConsole((
+                        f'REGEX_PLAYCARD_0: {action} by '
+                        f'{self.saved_players.get_player_name(player_id)} card {card}'))
 
 
     def playOpponentChosen(self, pkt):
@@ -278,12 +287,14 @@ class EkGameCheat:
 
                 self.game_actions.append([player_id,card,opponent])
                 self.saved_players.remove_card(opponent, card)
-                logging.debug(f'REGEX_OPPONENTCHOSEN1: card {card} \
-                        by {self.saved_players.get_player_name(player_id)} \
-                        to {self.saved_players.get_player_name(opponent)}')            
-                self.updateConsole(f'playOpponentChosen: {action} card {card} \
-                        by {self.saved_players.get_player_name(player_id)} \
-                        to {self.saved_players.get_player_name(opponent)}')
+                logging.debug((
+                        f'REGEX_OPPONENTCHOSEN1: card {card}'
+                        f' by {self.saved_players.get_player_name(player_id)}'
+                        f' to {self.saved_players.get_player_name(opponent)}'))            
+                self.updateConsole((
+                        f'playOpponentChosen: {action} card {card}'
+                        f' by {self.saved_players.get_player_name(player_id)}'
+                        f' to {self.saved_players.get_player_name(opponent)}'))
 
 
     def playRegisterPlayers(self, pkt):
@@ -317,7 +328,10 @@ class EkGameCheat:
                 self.saved_players.remove_card(player_id2, card)
                 self.saved_players.save_card(player_id, card)
                 logging.debug(f'REGEX_XCHG: {action} from {self.saved_players.get_player_name(player_id2)} to {self.saved_players.get_player_name(player_id)}  card {card}')
-                self.updateConsole(f'REGEX_XCHG: {action} from {self.saved_players.get_player_name(player_id2)} to {self.saved_players.get_player_name(player_id)}  card {card}')
+                self.updateConsole((
+                        f'REGEX_XCHG: {action} from '
+                        f'{self.saved_players.get_player_name(player_id2)} to '
+                        f'{self.saved_players.get_player_name(player_id)}  card {card}'))
 
 
     def playDied(self, pkt):
@@ -353,7 +367,7 @@ class EkGameCheat:
                     del pkt[UDP].len
                     del pkt[Ether].dst
                     del pkt[Ether].src
-#                            pkt[UDP].load = EMOTE_DRUNK
+                    #pkt[UDP].load = EMOTE_DRUNK
                     #sendp(pkt)
                     #pkt.show2() # New checksum
 
@@ -384,7 +398,9 @@ class EkGameCheat:
 
                 idx = temp_players.get_index(player.player_id)
                 # Wipe any gui forms if exist.
-                self.updateConsole(f'finalizePlayers match found: {player.names} {idx} out of {len(temp_players.players)} list {len(player_ids)}')
+                self.updateConsole((
+                        f'finalizePlayers match found: {player.names} {idx} '
+                        f'out of {len(temp_players.players)} list {len(player_ids)}'))
 
         self.saved_players = temp_players
     
