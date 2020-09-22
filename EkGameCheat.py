@@ -127,6 +127,7 @@ class EkGameCheat:
         self.game_actions = []
         self.pkt_count = 0
         self.console = ''
+        self.game_state_cb = {}
 
 
     def updateConsole(self, message, call_back=None):
@@ -146,6 +147,11 @@ class EkGameCheat:
         if callable(call_back):
             call_back(data = message)
 
+
+    def setGameStateCb(self, state:str, cb:str=None):
+        if state in GAME_STATES.keys():
+            if callable(cb):
+                self.game_state_cb[state] = cb
 
     def sendCb(self, **kwargs):
 
@@ -347,6 +353,8 @@ class EkGameCheat:
             self.game_actions.append([action])
             self.updateConsole(f'REGEX_STARTED: {action}')
             self.game_state = GAME_STATES['STARTED']
+            # Callback to ui maybe?
+            self.game_state_cb['STARTED']()
 
     
     def playEmote(self, pkt):

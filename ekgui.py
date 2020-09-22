@@ -153,6 +153,19 @@ class MainForm(npyscreen.ActionForm):
 
         self.parentApp.stop()
 
+    def reset(self):
+        # TODO: Tidy up
+        self.box1.clear()
+        self.box1.clearBuffer()
+        self.box2.clear()
+        self.box2.clearBuffer()
+        self.box3.clear()
+        self.box3.clearBuffer()
+        self.box4.clear()
+        self.box4.clearBuffer()
+        self.box5.clear()
+        self.box5.clearBuffer()
+
 
 class MyApp(npyscreen.NPSAppManaged):
     def while_waiting(self):
@@ -188,6 +201,8 @@ class MyApp(npyscreen.NPSAppManaged):
                 console_cb=display_console, 
                 status_cb=display_status, 
                 player_cb=display_player_cb)
+
+        self.game_cheat.setGameStateCb('STARTED', display_game_start_cb)
         #sniff_thread = AsyncSniffer(filter=f'udp port 5056', prn=send_cb, iface=SNIFF_INF)
         self.gateway_ip = self.game_cheat.GATEWAY_IP
 
@@ -255,7 +270,6 @@ def display_console(**kwargs):
     if data:
         app.main_form.console.buffer([repr(f'{data}')], True, True)
     
-    # Display is auto invoked, but race condition means we might miss some messages.
     app.main_form.console.update()
 
 
@@ -267,8 +281,14 @@ def display_status(**kwargs):
     if data:
         app.main_form.status.buffer([repr(f'{data}')], True, True)
     
-    # Display is auto invoked, but race condition means we might miss some messages.
     app.main_form.status.update()
+
+
+def display_game_start_cb(**kwargs):
+    global app
+
+    # TODO: Implement a way to reset all widgets
+    app.main_form.reset()
 
 
 def update_console(message, call_back=display_console):
