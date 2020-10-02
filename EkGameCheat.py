@@ -314,7 +314,7 @@ class EkGameCheat:
                         names = [username],
                         device_id = did,
                         avatar_id = avatarIds,
-                        hand = [],
+                        hand = {},
                         display_cb = self.player_cb,
                 )
 
@@ -400,7 +400,7 @@ class EkGameCheat:
 
             if player:= potential_players.get_player(final_player_id):
                 # Reset player hand
-                player.hand = [b'Defuse0.0']
+                player.hand = {b'Defuse0.0'}
                 
                 temp_players.save_player(player)
 

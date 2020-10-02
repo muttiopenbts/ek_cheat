@@ -3,7 +3,7 @@ logging.basicConfig(level=logging.ERROR)
 
 
 class Player:
-    def __init__(self, player_id=None, names=[], device_id=None, avatar_id=None, hand=[], display_cb=None):
+    def __init__(self, player_id=None, names=[], device_id=None, avatar_id=None, hand={}, display_cb=None):
         self.player_id = player_id
         self.names = names
         self.device_id = device_id
@@ -71,10 +71,11 @@ class Players:
 
             if player_record.hand == None:
                 # Create new card list
-                self.players[found].hand = [card]
+                self.players[found].hand = {card}
             else:
+                # I believe each card name is unique.
                 # Just add to list
-                self.players[found].hand.append(card)
+                self.players[found].hand.add(card)
             
             # Display player hand
             if callable(self.players[found].display_cb):
@@ -98,7 +99,7 @@ class Players:
         avatar_id = player.avatar_id
         display_cb = player.display_cb
         # Every player starts with 1 Defuser card
-        cards = player.hand or [b'Defuse0.0'] 
+        cards = player.hand or {b'Defuse0.0'} 
 
         # prevent overwriting existing entry of user
         found = self.get_index(player_id)
@@ -148,11 +149,7 @@ class Players:
             try:
                 if player_record.hand != None:
                     # Just remove from list
-                    # Card names are not exact, we are looking for substring
-                    # Match assumes that card names are both byte string and the last three chrs are not needed.
-                    found_card = next((value for idx, value in enumerate(player_record.hand) if card[:-3] in value[:-3]), None)
-                    if found_card:
-                        self.players[found].hand.remove(found_card)
+                    self.players[found].hand.discard(card)
                 else:
                     # Appears we are removing a card we don't have a record of. Do nothing
                     pass

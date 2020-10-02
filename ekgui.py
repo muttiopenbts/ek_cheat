@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 '''Exploding Kittens cheat.
 Only tested on core deck, and Android app.
 Doesn't guarantee you'll win, but does give you an advantage. :)
@@ -23,7 +24,6 @@ Known bugs:
 Sometimes the terminal rceives what appear to be control characters.
 TODO: Investigate if better sanitization of bytes from the wire is needed.
 '''
-#! /usr/bin/env python
 import npyscreen
 from datetime import datetime
 from Player import Player, Players
