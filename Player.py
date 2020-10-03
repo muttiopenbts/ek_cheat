@@ -148,7 +148,14 @@ class Players:
 
             try:
                 if player_record.hand != None:
-                    # Just remove from list
+                    # When game starts, we don't know the exact name of starting defuser card.
+                    if 'defuse' in str(card.lower()):
+                        found_defuser = next((hand_card for hand_card in self.players[found].hand 
+                                if 'defuse' in str(hand_card.lower())), None)
+                        if found_defuser:
+                            # We know the caller wants to remove a defuser and we have a defuser in hand.
+                            card = found_defuser
+
                     self.players[found].hand.discard(card)
                 else:
                     # Appears we are removing a card we don't have a record of. Do nothing
