@@ -31,7 +31,9 @@ import sys
 # 36 chrs
 GUID = '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'
 
-conf.use_pcap = True
+# osx has issues with AF_PACKET.
+# Disabling libpcap seems to fix.
+conf.use_pcap = False
 
 regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds\x00(.*?)\xff'.encode()
 # player_id, username, did, len_and_avatarIds
