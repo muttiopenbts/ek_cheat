@@ -31,9 +31,7 @@ import sys
 # 36 chrs
 GUID = '[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}'
 
-# osx has issues with AF_PACKET.
-# Disabling libpcap seems to fix.
-conf.use_pcap = False
+my_os = platform.system()
 
 regex_bstring = rf'playerIds.*?({GUID}).*?usernames[\x00-\xff]{{2}}(.*?)s\x00\x08.*?deviceIds.*?({GUID})s\x00.*?avatarIds\x00(.*?)\xff'.encode()
 # player_id, username, did, len_and_avatarIds
@@ -130,6 +128,22 @@ class EkGameCheat:
         self.pkt_count = 0
         self.console = ''
         self.game_state_cb = {}
+        self.set_capture_type(conf)
+
+
+    def set_capture_type(self, scapy_conf):
+        my_os = platform.system()
+
+        if my_os == 'Linux':
+            scapy_conf.use_pcap = True
+        elif my_os == "Darwin":
+            # osx has issues with AF_PACKET.
+            # Disabling libpcap seems to fix.
+            scapy_conf.use_pcap = False
+        elif my_os == 'Windows':
+            raise Exception(f'Scapy packet library config setting.\nO/S {my_os} not supported')
+        else:
+            raise Exception(f'Scapy packet library config setting.\nO/S {repr(my_os)} not supported')
 
 
     def updateConsole(self, message, call_back=None):
@@ -478,14 +492,14 @@ class EkGameCheat:
             elif my_os == 'Darwin':
                 os.system(f'sudo sysctl -w net.inet.ip.forwarding=1')
             elif my_os == 'Windows':
-                raise('O/S not supported')
+                raise Exception('O/S not supported')
         else:
             if my_os == 'Linux':
                 os.system(f'sudo net.ipv4.ip_forward = 1')
             elif my_os == 'Darwin':
                 os.system(f'sudo sysctl -w net.inet.ip.forwarding=0')
             elif my_os == 'Windows':
-                raise('O/S not supported')
+                raise Exception('O/S not supported')
             
 
     def spoofer(self, target_ip:str, spoof_ip:str):

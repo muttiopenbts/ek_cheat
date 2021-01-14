@@ -227,14 +227,14 @@ def ip_forwarding(enable:bool=False):
         elif my_os == 'Darwin':
             os.system(f'sudo sysctl -w net.inet.ip.forwarding=1')
         elif my_os == 'Windows':
-            raise('O/S not supported')
+            raise Exception('O/S not supported')
     else:
         if my_os == 'Linux':
             os.system(f'sudo net.ipv4.ip_forward = 1')
         elif my_os == 'Darwin':
             os.system(f'sudo sysctl -w net.inet.ip.forwarding=0')
         elif my_os == 'Windows':
-            raise('O/S not supported')
+            raise Exception('O/S not supported')
 
 
 def init_config():
@@ -243,16 +243,19 @@ def init_config():
     # Prevent escape sequance output messing up screen. Meta mode ON
     os.environ['TERM'] = 'linux'
 
+    if len(sys.argv) != 3:
+        raise Exception('Error: Please specify an interface to launch attack from and target ip.')
+
     if not (SNIFF_INF:= sys.argv[1]):
-        raise Exception('Please specify an interface to launch attack from.')
+        raise Exception('Error: Please specify an interface to launch attack from.')
 
     if not (VICTIM_IP:= sys.argv[2]):
-        print('Please specify device running Exploding Kittens app.')
+        print('Error: Please specify device running Exploding Kittens app.')
         raise KeyboardInterrupt
 
     # Initialize app configuration
     if not is_interface_up(SNIFF_INF):
-        print('MitM interface is down.')
+        print('Error: MitM interface is down.')
         raise KeyboardInterrupt
 
     ip_forwarding(True)
