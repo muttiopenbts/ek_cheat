@@ -11,14 +11,20 @@ Better capture performance with
     $ python3 -m pip install --upgrade libpcap
 
 ## How to run
-### Expected use
+### Install
+```
+$ git clone https://github.com/muttiopenbts/ek_cheat.git
+$ cd ek_cheat
+$ pipenv install
+```
+### Play
 1. Open EK mobile app
 2. Run this script
-3. Join a game
+```
+$ ./ekgui.py <network interface name> <ip address of where EK mobile app is running>
+```
+3. Join an EK game on the app
 4. Watch script output to see where opponents place EK card in deck, and cards drawn from deck.
-### Run
-./python3 ekgui.py <local network interface name> <ip address of device running EK>
 
-## Known bugs
-Sometimes the terminal rceives what appear to be control characters.
-TODO: Investigate if better sanitization of bytes from the wire is needed.
+## Tested on
+MacOS Monterey
